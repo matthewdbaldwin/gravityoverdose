@@ -20,6 +20,7 @@ export default buildConfig({
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: { outputFile: path.resolve(dirname, 'payload-types.ts') },
   db: postgresAdapter({
+    push: true,
     pool: {
       connectionString: process.env.DATABASE_URI || '',
       ssl: process.env.DATABASE_URI?.includes('railway.internal')
