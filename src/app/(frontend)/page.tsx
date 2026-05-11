@@ -1,59 +1,30 @@
-import { headers as getHeaders } from 'next/headers.js'
-import Image from 'next/image'
 import { getPayload } from 'payload'
-import React from 'react'
-import { fileURLToPath } from 'url'
-
-import config from '@/payload.config'
-import './styles.css'
+import config from '@payload-config'
+import Link from 'next/link'
 
 export default async function HomePage() {
-  const headers = await getHeaders()
-  const payloadConfig = await config
-  const payload = await getPayload({ config: payloadConfig })
-  const { user } = await payload.auth({ headers })
+  const payload = await getPayload({ config })
 
-  const fileURL = `vscode://file/${fileURLToPath(import.meta.url)}`
+  const { docs: projects } = await payload.find({
+    collection: 'projects',
+    where: { status: { equals: 'published' } },
+    sort: '-year',
+    limit: 10,
+  })
 
   return (
-    <div className="home">
-      <div className="content">
-        <picture>
-          <source srcSet="https://raw.githubusercontent.com/payloadcms/payload/3.x/packages/ui/src/assets/payload-favicon.svg" />
-          <Image
-            alt="Payload Logo"
-            height={65}
-            src="https://raw.githubusercontent.com/payloadcms/payload/3.x/packages/ui/src/assets/payload-favicon.svg"
-            width={65}
-          />
-        </picture>
-        {!user && <h1>Welcome to your new project.</h1>}
-        {user && <h1>Welcome back, {user.email}</h1>}
-        <div className="links">
-          <a
-            className="admin"
-            href={payloadConfig.routes.admin}
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            Go to admin panel
-          </a>
-          <a
-            className="docs"
-            href="https://payloadcms.com/docs"
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            Documentation
-          </a>
-        </div>
-      </div>
-      <div className="footer">
-        <p>Update this page by editing</p>
-        <a className="codeLink" href={fileURL}>
-          <code>app/(frontend)/page.tsx</code>
-        </a>
-      </div>
-    </div>
+    <main className="min-h-screen bg-black text-white p-12">
+      <h1 className="text-7xl font-black tracking-tighter">GRAVITY/OD</h1>
+      <ul className="mt-20 divide-y divide-white/10 border-y border-white/10">
+        {projects.map((p) => (
+          <li key={p.id} className="py-8">
+            <Link href={`/work/${p.slug}`} className="flex justify-between items-baseline group">
+              <span className="text-4xl font-black group-hover:text-[#ff4d2e]">{p.title}</span>
+              <span className="text-sm text-white/40">{p.year}</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </main>
   )
 }
