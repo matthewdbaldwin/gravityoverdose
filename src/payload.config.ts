@@ -19,6 +19,13 @@ export default buildConfig({
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: { outputFile: path.resolve(dirname, 'payload-types.ts') },
-  db: postgresAdapter({ pool: { connectionString: process.env.DATABASE_URI || '' } }),
+  db: postgresAdapter({
+    pool: {
+      connectionString: process.env.DATABASE_URI || '',
+      ssl: process.env.DATABASE_URI?.includes('railway.internal')
+        ? { rejectUnauthorized: false }
+        : undefined,
+    },
+  }),
   sharp,
 })
