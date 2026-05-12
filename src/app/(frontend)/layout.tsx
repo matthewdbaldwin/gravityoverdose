@@ -6,9 +6,14 @@ export const metadata = {
   description: 'Independent design & engineering studio.',
 }
 
+export const viewport = {
+  colorScheme: 'dark' as const,
+  themeColor: '#000000',
+}
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <body>{children}</body>
     </html>
   )
