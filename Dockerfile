@@ -22,7 +22,10 @@ RUN corepack enable pnpm && pnpm run build
 FROM base AS runner
 ENV NODE_ENV=production
 
-RUN addgroup --system --gid 1001 nodejs \
+# su-exec lets us start as root (to chown the volume mount) then
+# drop privileges to nextjs before running the Node process.
+RUN apk add --no-cache su-exec \
+ && addgroup --system --gid 1001 nodejs \
  && adduser --system --uid 1001 nextjs
 
 COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
@@ -33,16 +36,15 @@ COPY --from=builder --chown=nextjs:nodejs /app/next.config.ts ./next.config.ts
 COPY --from=builder --chown=nextjs:nodejs /app/tsconfig.json ./tsconfig.json
 COPY --from=builder --chown=nextjs:nodejs /app/src ./src
 
-# Pre-create the media mount point with correct ownership so the Railway
-# volume mounted at /app/media is writable by the nextjs user.
-RUN mkdir -p /app/media && chown nextjs:nodejs /app/media
+# Pre-create the media mount point so the volume has somewhere to mount.
+RUN mkdir -p /app/media
 
-USER nextjs
+# Container starts as root so we can chown the volume mount (Railway
+# volumes mount as root-owned regardless of image perms), then
+# su-exec drops to nextjs for everything afterward.
 
 EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
-# Apply pending Payload migrations before starting Next.js. If there
-# are none pending, `migrate` is a no-op.
-CMD ["sh", "-c", "node node_modules/payload/bin.js migrate && node node_modules/next/dist/bin/next start"]
+CMD ["sh", "-c", "chown nextjs:nodejs /app/media && exec su-exec nextjs:nodejs sh -c 'node node_modules/payload/bin.js migrate && node node_modules/next/dist/bin/next start'"]
